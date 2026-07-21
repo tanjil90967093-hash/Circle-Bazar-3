@@ -19,15 +19,23 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        gradle-version: '9.3.1'
-        cache-disabled: true
+    - name: Auto Create Dummy google-services.json if missing
+      run: |
+        DUMMY_JSON='{"project_info":{"project_number":"0","project_id":"dummy","storage_bucket":"dummy"},"client":[{"client_info":{"mobilesdk_app_id":"1:0:android:0","android_client_info":{"package_name":"com.example"}},"api_key":[{"current_key":"dummy"}]}]}'
+        
+        mkdir -p app
+        if [ ! -f "app/google-services.json" ]; then
+          echo "$DUMMY_JSON" > app/google-services.json
+        fi
+        
+        if [ -d "android" ]; then
+          mkdir -p android/app
+          if [ ! -f "android/app/google-services.json" ]; then
+            echo "$DUMMY_JSON" > android/app/google-services.json
+          fi
+        fi
 
     - name: Build Android APK
-      env:
-        GRADLE_OPTS: "-Djava.awt.headless=true -Dorg.gradle.daemon=false -Dkotlin.compiler.execution.strategy=in-process -Xmx4096m"
       run: |
         if [ -d "android" ]; then
           cd android
@@ -35,9 +43,9 @@ jobs:
 
         if [ -f "gradlew" ]; then
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace --no-daemon -Djava.awt.headless=true
+          ./gradlew assembleDebug --stacktrace
         else
-          gradle assembleDebug --stacktrace --no-daemon -Djava.awt.headless=true
+          gradle assembleDebug --stacktrace
         fi
 
     - name: Upload Debug APK
