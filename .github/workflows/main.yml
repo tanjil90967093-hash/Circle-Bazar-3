@@ -24,36 +24,34 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # ১. package.json থাকলে NPM রান করবে, না থাকলে স্কিপ করবে (ফেল মারবে না)
-    - name: Install Dependencies & Build Web Project
-      run: |
-        if [ -f "package.json" ]; then
-          echo "package.json found! Installing dependencies..."
-          npm install --force
-          npm run build --if-present
-          npx cap sync android || true
-        else
-          echo "No package.json in root. Skipping NPM step..."
-        fi
-
-    # ২. ফ্রেশ গ্র্যাডল সেটআপ (ক্যাশ বন্ধ রাখা হয়েছে)
     - name: Setup Gradle CLI
       uses: gradle/actions/setup-gradle@v3
       with:
         gradle-version: '8.5'
         cache-disabled: true
 
-    # ৩. অ্যান্ড্রয়েড ফোল্ডার খুঁজে বের করে APK বিল্ড করা
-    - name: Build Android APK
+    - name: Auto-Locate and Build Android Project
       run: |
-        if [ -d "android" ]; then
+        echo "Searching for Android Gradle configuration..."
+        if [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
+          echo "Found build.gradle in root."
+          gradle assembleDebug --stacktrace
+        elif [ -d "android" ] && ( [ -f "android/build.gradle" ] || [ -f "android/build.gradle.kts" ] ); then
+          echo "Found build.gradle in /android directory."
           cd android
           gradle assembleDebug --stacktrace
         else
-          gradle assembleDebug --stacktrace
+          GRADLE_DIR=$(find . -maxdepth 3 \( -name "build.gradle" -o -name "build.gradle.kts" \) | head -n 1 | xargs dirname)
+          if [ -n "$GRADLE_DIR" ]; then
+            echo "Found build.gradle in $GRADLE_DIR"
+            cd "$GRADLE_DIR"
+            gradle assembleDebug --stacktrace
+          else
+            echo "ERROR: Could not find build.gradle anywhere in the repository!"
+            exit 1
+          fi
         fi
 
-    # ৪. বিল্ড হওয়া APK গিটহাবে আপলোড করে দেওয়া (ডাউনলোডের জন্য)
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
