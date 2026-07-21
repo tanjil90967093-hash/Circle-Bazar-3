@@ -24,34 +24,25 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Gradle CLI
+    - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
         gradle-version: '9.3.1'
         cache-disabled: true
 
-    - name: Auto-Locate and Build Android Project
+    - name: Build Android APK
       env:
-        GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx2048m -XX:MaxMetaspaceSize=512m'"
+        GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dkotlin.compiler.execution.strategy=in-process -Xmx3072m"
       run: |
-        echo "Searching for Android Gradle configuration..."
-        if [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
-          echo "Found build.gradle in root."
-          gradle assembleDebug --stacktrace --no-daemon
-        elif [ -d "android" ] && ( [ -f "android/build.gradle" ] || [ -f "android/build.gradle.kts" ] ); then
-          echo "Found build.gradle in /android directory."
+        if [ -d "android" ]; then
           cd android
-          gradle assembleDebug --stacktrace --no-daemon
+        fi
+
+        if [ -f "gradlew" ]; then
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace --no-daemon
         else
-          GRADLE_DIR=$(find . -maxdepth 3 \( -name "build.gradle" -o -name "build.gradle.kts" \) | head -n 1 | xargs dirname)
-          if [ -n "$GRADLE_DIR" ]; then
-            echo "Found build.gradle in $GRADLE_DIR"
-            cd "$GRADLE_DIR"
-            gradle assembleDebug --stacktrace --no-daemon
-          else
-            echo "ERROR: Could not find build.gradle anywhere in the repository!"
-            exit 1
-          fi
+          gradle assembleDebug --stacktrace --no-daemon
         fi
 
     - name: Upload Debug APK
