@@ -1,0 +1,76 @@
+--- app/src/main/java/com/example/ui/screens/MainScreen.kt
++++ app/src/main/java/com/example/ui/screens/MainScreen.kt
+@@ -23,10 +23,8 @@
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.mutableIntStateOf
+-import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.mutableFloatStateOf
+ import androidx.compose.runtime.remember
+ import androidx.compose.runtime.setValue
+ import androidx.compose.foundation.layout.fillMaxSize
+-import androidx.compose.animation.AnimatedVisibility
+-import androidx.compose.animation.slideInVertically
+-import androidx.compose.animation.slideOutVertically
+ import androidx.compose.ui.geometry.Offset
+ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+@@ -38,10 +36,13 @@
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.shadow
+ import androidx.compose.ui.graphics.vector.ImageVector
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
++import androidx.compose.ui.unit.IntOffset
++import androidx.compose.ui.platform.LocalDensity
+ import androidx.navigation.NavController
++import kotlin.math.roundToInt
+ 
+ enum class BottomNavItem(
+@@ -62,29 +63,26 @@
+     var selectedItem by remember { mutableIntStateOf(0) }
+     val items = BottomNavItem.values()
+ 
+-    var bottomBarVisible by remember { mutableStateOf(true) }
++    val bottomBarHeight = 80.dp
++    val bottomBarHeightPx = with(LocalDensity.current) { bottomBarHeight.roundToPx().toFloat() }
++    val bottomBarOffsetHeightPx = remember { mutableFloatStateOf(0f) }
++
+     val nestedScrollConnection = remember {
+         object : NestedScrollConnection {
+             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+-                if (available.y < -10) {
+-                    bottomBarVisible = false
+-                } else if (available.y > 10) {
+-                    bottomBarVisible = true
+-                }
++                val delta = available.y
++                val newOffset = bottomBarOffsetHeightPx.floatValue + delta
++                bottomBarOffsetHeightPx.floatValue = newOffset.coerceIn(-bottomBarHeightPx, 0f)
+                 return Offset.Zero
+             }
+         }
+     }
+ 
+     Scaffold(
+         modifier = Modifier.nestedScroll(nestedScrollConnection),
+         bottomBar = {
+-            AnimatedVisibility(
+-                visible = bottomBarVisible,
+-                enter = slideInVertically(initialOffsetY = { it }),
+-                exit = slideOutVertically(targetOffsetY = { it })
+-            ) {
+                 NavigationBar(
+                     containerColor = Color.White,
+                     tonalElevation = 0.dp,
+-                    modifier = Modifier.shadow(8.dp)
++                    modifier = Modifier.offset { IntOffset(x = 0, y = -bottomBarOffsetHeightPx.floatValue.roundToInt()) }.shadow(8.dp)
+                 ) {
+                     items.forEachIndexed { index, item ->
+@@ -111,7 +109,6 @@
+                     )
+                 }
+-            }
+             }
+         }
+     ) { innerPadding ->

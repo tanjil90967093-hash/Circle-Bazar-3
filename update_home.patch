@@ -1,0 +1,55 @@
+--- app/src/main/java/com/example/ui/screens/HomeScreen.kt
++++ app/src/main/java/com/example/ui/screens/HomeScreen.kt
+@@ -40,11 +40,11 @@
+     ) {
+         item {
+             HeroBannerSection()
+         }
+         item {
+-            CircleDealsSection(onNavigateToCircleDeals)
++            CategoriesSection(title = null, size = 48.dp)
+         }
+         item {
+-            CategoriesSection(title = null, size = 48.dp)
++            CircleDealsSection(onNavigateToCircleDeals)
+         }
+         item {
+@@ -52,29 +52,14 @@
+         }
+         item {
+-            CategoriesSection(title = "Product Categories", size = 64.dp)
++            CategoryProductsRow("Electronics", allProductsMockData.take(4))
+         }
+         item {
+-            Text(
+-                text = "For You",
+-                style = MaterialTheme.typography.titleLarge,
+-                fontWeight = FontWeight.Bold,
+-                color = MaterialTheme.colorScheme.onBackground,
+-                modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 12.dp)
+-            )
++            CategoryProductsRow("Fashion", allProductsMockData.drop(2).take(4))
+         }
+-        items(allProductsMockData.chunked(2)) { rowItems ->
+-            Row(
+-                modifier = Modifier
+-                    .fillMaxWidth()
+-                    .padding(horizontal = 16.dp, vertical = 6.dp),
+-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+-            ) {
+-                for (product in rowItems) {
+-                    Box(modifier = Modifier.weight(1f)) {
+-                        StandardProductCard(product, modifier = Modifier.fillMaxWidth())
+-                    }
+-                }
+-                if (rowItems.size == 1) {
+-                    Spacer(modifier = Modifier.weight(1f))
+-                }
+-            }
++        item {
++            CategoryProductsRow("Home & Lifestyle", allProductsMockData.drop(4).take(4))
+         }
++        item {
++            CategoryProductsRow("Beauty", allProductsMockData.drop(1).take(4))
++        }
+     }
